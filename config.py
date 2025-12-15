@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+
 from dotenv import load_dotenv
 
 # Cargar variables de entorno
@@ -26,7 +27,7 @@ WAIT_TIMES = {
     "short": (1, 2),
     "medium": (2, 4),
     "long": (3, 6),
-    "extra_long": (5, 8)
+    "extra_long": (5, 8),
 }
 
 # User-Agent realista
@@ -49,18 +50,15 @@ SELECTORS = {
     "email_input": "input[name='email'], input[type='email'], #email",
     "password_input": "input[name='pass'], input[type='password'], #pass",
     "login_button": "button[name='login'], button[type='submit']",
-    
     # Perfil
     "profile_name": "h1",
     "bio": "div[data-testid='profile_biography'], div.bio",
-    
     # Posts
     "posts_container": "div[role='feed']",
     "post": "div[role='article'][data-pagelet]",
     "post_text": "div[data-ad-comet-preview='message']",
     "reactions": "span[aria-label*='reacciones'], span[aria-label*='reactions']",
-    
     # Navegación
     "friends_link": "a[href*='/friends']",
-    "groups_link": "a[href*='/groups']"
+    "groups_link": "a[href*='/groups']",
 }

@@ -2,7 +2,7 @@
 """
 Paquete de tests unitarios para Facebook Big Five Analysis.
 
-Este archivo __init__.py hace que Python trate el directorio 'tests' 
+Este archivo __init__.py hace que Python trate el directorio 'tests'
 como un paquete, permitiendo:
 1. Ejecutar tests con pytest
 2. Importar módulos de tests
