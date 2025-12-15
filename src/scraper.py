@@ -79,3 +79,102 @@ class FacebookScraper:
         # Guardar cookies después del login
         self.save_cookies()
         print("Login manual completado y cookies guardadas.")
+
+    def navigate_to_profile(self, profile_url: str):
+        """Navega al perfil deseado con esperas aleatorias."""
+        self.page.goto(profile_url)
+        self.random_wait("long")
+
+    def extract_basic_info(self) -> Dict:
+        """Extrae información básica del perfil."""
+        self.random_wait("short")
+        # Selectores de ejemplo - DEBEN AJUSTARSE INSPECCIONANDO LA PÁGINA
+        try:
+            name = self.page.locator("h1").first.inner_text()
+        except:
+            name = ""
+
+        try:
+            bio = self.page.locator("div.bio").first.inner_text()
+        except:
+            bio = ""
+
+        return {
+            "name": name,
+            "bio": bio,
+            "profile_url": self.page.url
+        }
+
+    def extract_posts(self, max_posts: int = 50) -> List[Dict]:
+        """Extrae publicaciones del muro."""
+        posts = []
+        scroll_attempts = 0
+        max_scroll_attempts = 20
+
+        while len(posts) < max_posts and scroll_attempts < max_scroll_attempts:
+            # Encontrar elementos de publicaciones
+            post_elements = self.page.locator("div[role='article']").all()
+
+            for post in post_elements:
+                if len(posts) >= max_posts:
+                    break
+
+                try:
+                    # Extraer texto (selector necesita ajuste)
+                    text_elem = post.locator("span:has-text('')").first
+                    text = text_elem.inner_text() if text_elem.count() > 0 else ""
+
+                    # Extraer reacciones aproximadas
+                    reactions = post.locator("div[aria-label*='reactions']").count()
+
+                    # Extraer comentarios aproximados
+                    comments = post.locator("div[aria-label*='comment']").count()
+
+                    posts.append({
+                        "text": text,
+                        "reactions": reactions,
+                        "comments": comments,
+                        "timestamp": time.time()
+                    })
+                except Exception as e:
+                    print(f"Error extrayendo post: {e}")
+
+            # Scroll down
+            self.page.mouse.wheel(0, random.randint(1000, 3000))
+            self.random_wait("medium")
+            scroll_attempts += 1
+
+        return posts
+
+    def extract_friends_count(self) -> int:
+        """Extrae el número de amigos (si es visible)."""
+        try:
+            # Navegar a la sección de amigos
+            friends_url = self.page.url + "/friends"
+            self.page.goto(friends_url)
+            self.random_wait("medium")
+
+            # Contar elementos de amigos (selector aproximado)
+            friend_elements = self.page.locator("div.friend").count()
+            return friend_elements
+        except:
+            return 0
+
+    def extract_groups(self) -> List[str]:
+        """Extrae grupos a los que pertenece (si son visibles)."""
+        try:
+            groups_url = self.page.url + "/groups"
+            self.page.goto(groups_url)
+            self.random_wait("medium")
+
+            groups = []
+            group_elements = self.page.locator("div.group").all()
+
+            for group in group_elements:
+                name = group.inner_text()
+                if name:
+                    groups.append(name)
+
+            return groups
+        except:
+            return []
