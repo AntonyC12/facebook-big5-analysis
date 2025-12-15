@@ -1,144 +1,78 @@
-# main.py (actualizado)
-import json
+# main.py
 import time
-from pathlib import Path
 from src.scraper import FacebookScraper
 from src.personality import BigFiveAnalyzer
-
-def scrape_facebook_data(profile_url: str, use_cookies: bool = True):
-    """Extrae datos de Facebook y los guarda en JSON."""
-    print("Iniciando scraper de Facebook...")
-
-    with FacebookScraper(headless=False) as scraper:
-        # Intentar cargar cookies existentes
-        if use_cookies:
-            cookies_loaded = scraper.load_cookies()
-            if not cookies_loaded:
-                print("No se encontraron cookies. Se requiere login manual.")
-                scraper.login_manually()
-        else:
-            print("Login manual requerido (sin cookies)...")
-            scraper.login_manually()
-
-        # Navegar al perfil objetivo
-        print(f"Navegando al perfil: {profile_url}")
-        scraper.navigate_to_profile(profile_url)
-        time.sleep(3)
-
-        # Extraer datos
-        print("Extrayendo información del perfil...")
-        data = {}
-
-        data["basic_info"] = scraper.extract_basic_info()
-        print(f"  - Nombre: {data['basic_info'].get('name', 'No encontrado')}")
-
-        print("Extrayendo publicaciones (esto puede tomar unos minutos)...")
-        data["posts"] = scraper.extract_posts(max_posts=50)
-        print(f"  - {len(data['posts'])} publicaciones extraídas")
-
-        print("Extrayendo información de amigos...")
-        data["friends_count"] = scraper.extract_friends_count()
-        print(f"  - {data['friends_count']} amigos detectados")
-
-        print("Extrayendo grupos...")
-        data["groups"] = scraper.extract_groups()
-        print(f"  - {len(data['groups'])} grupos encontrados")
-
-        data["extraction_timestamp"] = time.time()
-
-        return data
-
-def analyze_personality(data: Dict):
-    """Analiza los datos y devuelve un reporte de personalidad."""
-    print("\nAnalizando personalidad Big Five...")
-
-    analyzer = BigFiveAnalyzer()
-
-    # Calcular scores
-    scores = analyzer.calculate_big_five_scores(data)
-    report = analyzer.generate_personality_report(scores)
-
-    # Análisis de sentimiento adicional
-    posts_text = [post.get("text", "") for post in data.get("posts", [])]
-    sentiment = analyzer.analyze_text_sentiment(posts_text)
-
-    analysis_result = {
-        "big_five_scores": scores,
-        "personality_report": report,
-        "sentiment_analysis": sentiment,
-        "metadata": {
-            "total_posts_analyzed": len(data.get("posts", [])),
-            "total_words_analyzed": sum(len(post.get("text", "").split()) for post in data.get("posts", [])),
-            "analysis_timestamp": time.time()
-        }
-    }
-
-    return analysis_result
-
-def save_results(data: Dict, analysis: Dict, output_dir: Path):
-    """Guarda los datos y análisis en archivos JSON."""
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    # Guardar datos crudos
-    raw_data_path = output_dir / "raw_data.json"
-    with open(raw_data_path, 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-
-    # Guardar análisis
-    analysis_path = output_dir / "personality_analysis.json"
-    with open(analysis_path, 'w', encoding='utf-8') as f:
-        json.dump(analysis, f, ensure_ascii=False, indent=2)
-
-    # Guardar reporte en texto plano
-    report_path = output_dir / "personality_report.txt"
-    with open(report_path, 'w', encoding='utf-8') as f:
-        f.write("=== REPORTE DE PERSONALIDAD BIG FIVE ===\n\n")
-        f.write(analysis["personality_report"])
-        f.write("\n\n=== ANÁLISIS DE SENTIMIENTO ===\n")
-        f.write(f"Publicaciones positivas: {analysis['sentiment_analysis']['positive']}\n")
-        f.write(f"Publicaciones negativas: {analysis['sentiment_analysis']['negative']}\n")
-        f.write(f"Publicaciones neutrales: {analysis['sentiment_analysis']['neutral']}\n")
-        f.write(f"Polaridad promedio: {analysis['sentiment_analysis']['avg_polarity']:.3f}\n")
-
-    return raw_data_path, analysis_path, report_path
+from src.utils import save_json, format_duration
+from config import RAW_DATA_PATH
 
 def main():
-    # Configuración
-    TARGET_PROFILE = "https://www.facebook.com/tu_perfil_principal"  # CAMBIAR
-    OUTPUT_DIR = Path("data/results")
-
-    print("=" * 60)
-    print("ANÁLISIS DE PERSONALIDAD BIG FIVE - FACEBOOK")
-    print("=" * 60)
-
+    print("🚀 INICIANDO ANÁLISIS DE PERSONALIDAD FACEBOOK")
+    print("="*60)
+    
+    # URL del perfil objetivo (MODIFICA ESTA URL)
+    profile_url = "https://facebook.com/tu_perfil_o_amigo"
+    
+    start_time = time.time()
+    
     try:
-        # Paso 1: Scraping
-        data = scrape_facebook_data(TARGET_PROFILE)
-
-        # Paso 2: Análisis
-        analysis = analyze_personality(data)
-
-        # Paso 3: Guardar resultados
-        raw_path, analysis_path, report_path = save_results(data, analysis, OUTPUT_DIR)
-
-        print("\n" + "=" * 60)
-        print("PROCESO COMPLETADO EXITOSAMENTE")
-        print("=" * 60)
-        print(f"\nResultados guardados en:")
-        print(f"  - Datos crudos: {raw_path}")
-        print(f"  - Análisis JSON: {analysis_path}")
-        print(f"  - Reporte texto: {report_path}")
-
-        print(f"\nPuntuaciones Big Five:")
-        for trait, score in analysis["big_five_scores"].items():
-            print(f"  - {trait.capitalize()}: {score:.3f}")
-
-        print(f"\nReporte de personalidad:\n{analysis['personality_report']}")
-
+        # 1. SCRAPING
+        print("🔍 Fase 1: Scraping de datos...")
+        with FacebookScraper(headless=False) as scraper:
+            # Asegurar login (manual la primera vez)
+            scraper.ensure_login()
+            
+            # Extraer datos básicos
+            basic_info = scraper.scrape_profile_basic_info(profile_url)
+            print(f"   📋 Info básica obtenida: {basic_info.get('name', 'No encontrado')}")
+            
+            # Extraer posts
+            posts = scraper.scrape_posts(max_posts=30)
+            print(f"   📄 {len(posts)} publicaciones obtenidas")
+            
+            # Simular amigos y grupos (por ahora datos de ejemplo)
+            # En un scraper real, implementarías scrape_friends() y scrape_groups()
+            sample_data = {
+                "basic_info": basic_info,
+                "posts": posts,
+                "friends_count": 500,  # Ejemplo
+                "groups": ["Programación", "Música", "Deportes"],  # Ejemplo
+            }
+        
+        # Guardar datos crudos
+        save_json(sample_data, "facebook_data")
+        print("✅ Scraping completado")
+        
+        # 2. ANÁLISIS
+        print("\n🧠 Fase 2: Análisis de personalidad...")
+        analyzer = BigFiveAnalyzer()
+        
+        # Calcular puntuaciones Big Five
+        scores = analyzer.calculate_big_five_scores(sample_data)
+        
+        # Generar reporte
+        report = analyzer.generate_personality_report(scores)
+        
+        print("\n" + "="*60)
+        print("📊 RESULTADOS BIG FIVE:")
+        print("="*60)
+        print(report)
+        print("="*60)
+        
+        # Guardar resultados
+        save_json(analyzer.results, "big5_results", folder="results")
+        
+        # 3. ESTADÍSTICAS
+        duration = time.time() - start_time
+        print(f"\n⏱️  Duración total: {format_duration(duration)}")
+        print(f"📊 Publicaciones analizadas: {analyzer.results['metadata']['posts_analyzed']}")
+        print(f"🔤 Palabras analizadas: {analyzer.results['metadata']['words_analyzed']:,}")
+        print("\n🎉 Análisis completado exitosamente!")
+        
+    except KeyboardInterrupt:
+        print("\n🛑 Proceso cancelado por el usuario")
     except Exception as e:
         print(f"\n❌ Error durante la ejecución: {e}")
-        import traceback
-        traceback.print_exc()
+        raise
 
 if __name__ == "__main__":
     main()
