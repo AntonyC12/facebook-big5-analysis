@@ -16,6 +16,8 @@ Este proyecto es **estrictamente académico**. El scraping de Facebook viola sus
 - ✅ Manejo de errores y tiempos de espera aleatorios
 
 ## Estructura del proyecto
+
+```text
 facebook-big5-analysis/
 ├── src/ # Código fuente
 │ ├── scraper.py # Scraping de Facebook con Playwright
@@ -32,6 +34,7 @@ facebook-big5-analysis/
 ├── requirements.txt # Dependencias
 ├── LICENSE # Licencia MIT
 └── README.md # Este archivo
+```
 
 ## Instalación
 1. Clonar repositorio: git `clone https://github.com/AntonioC12/facebook-big5-analysis.git` & `cd facebook-big5-analysis`
