@@ -87,6 +87,9 @@ class BigFiveAnalyzer:
 
     def calculate_big_five_scores(self, data: Dict) -> Dict[str, float]:
         """Calcula puntuaciones para los cinco rasgos y almacena en self.results."""
+        if not data or not data.get("posts"):
+            return {"error": "No hay datos para analizar"}
+        
         posts_text = [post.get("text", "") for post in data.get("posts", [])]
         all_text = ' '.join(posts_text)
 
