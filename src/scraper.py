@@ -14,6 +14,7 @@ class FacebookScraper:
         self.browser: Optional[Browser] = None
         self.context: Optional[BrowserContext] = None
         self.page: Optional[Page] = None
+        self.is_logged_in = False
 
     def __enter__(self):
         self.start_browser()
@@ -62,8 +63,16 @@ class FacebookScraper:
                 if self.context:
                     self.context.add_cookies(cookies)
             print("Cookies cargadas exitosamente")
+            self.is_logged_in = True
             return True
         return False
+
+    def ensure_login(self):
+        """Asegura que el scraper está logueado, usando cookies o login manual."""
+        if not self.load_cookies():
+            self.login_manually()
+        else:
+            print("Sesión restaurada desde cookies.")
 
     def login_manually(self, url: str = "https://www.facebook.com"):
         """
@@ -74,11 +83,21 @@ class FacebookScraper:
         self.random_wait("long")
 
         # Esperar que el usuario haga login manualmente
-        input("Por favor, haz login manualmente en el navegador y luego presiona Enter aquí...")
+        print("="*60)
+        print("Por favor, haz login manualmente en el navegador.")
+        print("Después de iniciar sesión, regresa aquí y presiona Enter.")
+        print("="*60)
+        input("Presiona Enter después de iniciar sesión...")
 
         # Guardar cookies después del login
         self.save_cookies()
+        self.is_logged_in = True
         print("Login manual completado y cookies guardadas.")
+
+    def scrape_profile_basic_info(self, profile_url: str) -> Dict:
+        """Extrae información básica del perfil."""
+        self.navigate_to_profile(profile_url)
+        return self.extract_basic_info()
 
     def navigate_to_profile(self, profile_url: str):
         """Navega al perfil deseado con esperas aleatorias."""
@@ -88,22 +107,28 @@ class FacebookScraper:
     def extract_basic_info(self) -> Dict:
         """Extrae información básica del perfil."""
         self.random_wait("short")
-        # Selectores de ejemplo - DEBEN AJUSTARSE INSPECCIONANDO LA PÁGINA
+        # Selectores mejorados
         try:
-            name = self.page.locator("h1").first.inner_text()
+            # Intentar obtener el nombre del perfil
+            name = self.page.locator("h1").first.inner_text(timeout=5000)
         except:
             name = ""
 
         try:
-            bio = self.page.locator("div.bio").first.inner_text()
+            # Intentar obtener la biografía
+            bio = self.page.locator("div.bio, div.about, div.description").first.inner_text(timeout=5000)
         except:
             bio = ""
 
         return {
-            "name": name,
-            "bio": bio,
+            "name": name.strip() if name else "",
+            "bio": bio.strip() if bio else "",
             "profile_url": self.page.url
         }
+
+    def scrape_posts(self, max_posts: int = 50) -> List[Dict]:
+        """Extrae publicaciones del muro."""
+        return self.extract_posts(max_posts)
 
     def extract_posts(self, max_posts: int = 50) -> List[Dict]:
         """Extrae publicaciones del muro."""
@@ -122,7 +147,7 @@ class FacebookScraper:
                 try:
                     # Extraer texto (selector necesita ajuste)
                     text_elem = post.locator("span:has-text('')").first
-                    text = text_elem.inner_text() if text_elem.count() > 0 else ""
+                    text = text_elem.inner_text(timeout=3000) if text_elem.count() > 0 else ""
 
                     # Extraer reacciones aproximadas
                     reactions = post.locator("div[aria-label*='reactions']").count()
@@ -150,31 +175,33 @@ class FacebookScraper:
         """Extrae el número de amigos (si es visible)."""
         try:
             # Navegar a la sección de amigos
-            friends_url = self.page.url + "/friends"
+            friends_url = self.page.url.rstrip('/') + "/friends"
             self.page.goto(friends_url)
             self.random_wait("medium")
 
             # Contar elementos de amigos (selector aproximado)
-            friend_elements = self.page.locator("div.friend").count()
+            friend_elements = self.page.locator("div.friend, div[data-testid='friend_list_item']").count()
             return friend_elements
-        except:
+        except Exception as e:
+            print(f"Error extrayendo amigos: {e}")
             return 0
 
     def extract_groups(self) -> List[str]:
         """Extrae grupos a los que pertenece (si son visibles)."""
         try:
-            groups_url = self.page.url + "/groups"
+            groups_url = self.page.url.rstrip('/') + "/groups"
             self.page.goto(groups_url)
             self.random_wait("medium")
 
             groups = []
-            group_elements = self.page.locator("div.group").all()
+            group_elements = self.page.locator("div.group, div[data-testid='group_item']").all()
 
             for group in group_elements:
-                name = group.inner_text()
+                name = group.inner_text(timeout=3000)
                 if name:
-                    groups.append(name)
+                    groups.append(name.strip())
 
             return groups
-        except:
+        except Exception as e:
+            print(f"Error extrayendo grupos: {e}")
             return []
