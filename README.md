@@ -14,14 +14,15 @@ Proyecto académico para análisis de personalidad Big Five mediante scraping de
 ## Estructura del Proyecto
 facebook-big5-analysis/
 ├── src/ # Código fuente
-│ ├── scraper.py # Scraper de Facebook
+│ ├── scraper.py # Scraping de Facebook con Playwright
 │ ├── personality.py # Analizador Big Five
 │ └── utils.py # Funciones auxiliares
 ├── data/ # Datos y resultados
 │ ├── cookies/ # Cookies de sesión
-│ ├── raw_json/ # Datos scrapeados
+│ ├── raw_json/ # Datos crudos scrapeados
 │ └── results/ # Resultados del análisis
 ├── tests/ # Pruebas unitarias
+├── config.py # Configuración
 ├── main.py # Punto de entrada
 └── requirements.txt # Dependencias
 
@@ -37,9 +38,11 @@ facebook-big5-analysis/
 2. La primera vez, hacer login manual en la ventana del navegador
 3. Las cookies se guardarán para sesiones futuras
 4. Los resultados se guardan en `data/results/`
+5. Se muestra un reporte detallado en consola
 
 ## Notas importantes
 - **Solo para uso académico**
 - Usar únicamente con cuentas propias
 - Facebook puede bloquear cuentas por scraping
 - Modificar `TARGET_PROFILE` en `main.py` antes de ejecutar
+
