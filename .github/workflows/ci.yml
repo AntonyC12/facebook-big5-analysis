@@ -9,7 +9,7 @@ on:
 jobs:
   format:
     name: Auto-Format Code
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04  # CAMBIADO de ubuntu-latest
     
     steps:
     - name: Checkout código
@@ -36,7 +36,7 @@ jobs:
   
   test:
     name: Run Tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04  # CAMBIADO de ubuntu-latest
     needs: [format]
     
     steps:
@@ -52,9 +52,23 @@ jobs:
     - name: Instalar dependencias de sistema para Playwright
       run: |
         sudo apt-get update
-        sudo apt-get install -y libnss3 libnspr4 libatk1.0-0 libatk-bridge2.0-0 \
-          libcups2 libdrm2 libxkbcommon0 libxcomposite1 libxdamage1 libxfixes3 \
-          libxrandr2 libgbm1 libpango-1.0-0 libcairo2 libasound2
+        sudo apt-get install -y \
+          libnss3 \
+          libnspr4 \
+          libatk1.0-0 \
+          libatk-bridge2.0-0 \
+          libcups2 \
+          libdrm2 \
+          libxkbcommon0 \
+          libxcomposite1 \
+          libxdamage1 \
+          libxfixes3 \
+          libxrandr2 \
+          libgbm1 \
+          libpango-1.0-0 \
+          libcairo2 \
+          libasound2 \
+          libatspi2.0-0
     
     - name: Instalar dependencias Python
       run: |
@@ -82,7 +96,7 @@ jobs:
   
   lint:
     name: Linting
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04  # CAMBIADO de ubuntu-latest
     needs: [format]
     
     steps:
@@ -105,7 +119,7 @@ jobs:
   
   security:
     name: Security Check
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04  # CAMBIADO de ubuntu-latest
     needs: [format]
     
     steps:
@@ -143,7 +157,7 @@ jobs:
   
   build:
     name: Build Verification
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04  # CAMBIADO de ubuntu-latest
     needs: [test, lint, security]
     
     steps:
