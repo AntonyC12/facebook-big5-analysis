@@ -3,21 +3,21 @@ import time
 from src.scraper import FacebookScraper
 from src.personality import BigFiveAnalyzer
 from src.utils import save_json, format_duration
-from config import RAW_DATA_PATH
+from config import TARGET_PROFILE_URL, MAX_POSTS, HEADLESS_BROWSER
 
 def main():
     print("🚀 INICIANDO ANÁLISIS DE PERSONALIDAD FACEBOOK")
     print("="*60)
     
-    # URL del perfil objetivo (MODIFICA ESTA URL)
-    profile_url = "https://facebook.com/tu_perfil_o_amigo"
+    # URL del perfil objetivo desde variable de entorno
+    profile_url = TARGET_PROFILE_URL
     
     start_time = time.time()
     
     try:
         # 1. SCRAPING
         print("🔍 Fase 1: Scraping de datos...")
-        with FacebookScraper(headless=False) as scraper:
+        with FacebookScraper(headless=HEADLESS_BROWSER) as scraper:
             # Asegurar login (manual la primera vez)
             scraper.ensure_login()
             
@@ -26,16 +26,18 @@ def main():
             print(f"   📋 Info básica obtenida: {basic_info.get('name', 'No encontrado')}")
             
             # Extraer posts
-            posts = scraper.scrape_posts(max_posts=30)
+            posts = scraper.scrape_posts(max_posts=MAX_POSTS)
             print(f"   📄 {len(posts)} publicaciones obtenidas")
             
-            # Simular amigos y grupos (por ahora datos de ejemplo)
-            # En un scraper real, implementarías scrape_friends() y scrape_groups()
+            # Extraer amigos y grupos
+            friends_count = scraper.extract_friends_count()
+            groups = scraper.extract_groups()
+            
             sample_data = {
                 "basic_info": basic_info,
                 "posts": posts,
-                "friends_count": 500,  # Ejemplo
-                "groups": ["Programación", "Música", "Deportes"],  # Ejemplo
+                "friends_count": friends_count,
+                "groups": groups,
             }
         
         # Guardar datos crudos
@@ -59,7 +61,7 @@ def main():
         print("="*60)
         
         # Guardar resultados
-        save_json(analyzer.results, "big5_results", folder="results")
+        analyzer.save_results("big5_results")
         
         # 3. ESTADÍSTICAS
         duration = time.time() - start_time
