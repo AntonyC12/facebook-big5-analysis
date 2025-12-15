@@ -1,9 +1,18 @@
 import os
 from pathlib import Path
+
 from dotenv import load_dotenv
 
 # Cargar variables de entorno
 load_dotenv()
+
+# ========== CONFIGURACIÓN DE SEGURIDAD ==========
+# Credenciales (NUNCA hardcodear)
+FACEBOOK_EMAIL = os.getenv("FACEBOOK_EMAIL", "")
+FACEBOOK_PASSWORD = os.getenv("FACEBOOK_PASSWORD", "")
+
+# Validar que las credenciales existan
+CREDENTIALS_PROVIDED = bool(FACEBOOK_EMAIL and FACEBOOK_PASSWORD)
 
 # Rutas base
 BASE_DIR = Path(__file__).parent
@@ -14,11 +23,11 @@ RESULTS_PATH = DATA_DIR / "results"
 
 # Tiempos de espera aleatorios (en segundos)
 WAIT_TIMES = {
-    "micro": (0.5, 1.5),
-    "short": (1, 3),
-    "medium": (3, 7),
-    "long": (5, 10),
-    "extra_long": (10, 20)
+    "micro": (0.3, 0.8),
+    "short": (1, 2),
+    "medium": (2, 4),
+    "long": (3, 6),
+    "extra_long": (5, 8),
 }
 
 # User-Agent realista
@@ -37,12 +46,19 @@ SENTIMENT_THRESHOLD = float(os.getenv("SENTIMENT_THRESHOLD", "0.1"))
 
 # Selectores de Facebook (actualizados 2024)
 SELECTORS = {
-    "post": "div[role='article']",
-    "post_text": "div[data-ad-comet-preview='message'] span",
-    "reactions": "[aria-label*='reacciones'], [aria-label*='reactions']",
-    "comments": "a[aria-label*='comentario'], a[aria-label*='comment']",
+    # Login
+    "email_input": "input[name='email'], input[type='email'], #email",
+    "password_input": "input[name='pass'], input[type='password'], #pass",
+    "login_button": "button[name='login'], button[type='submit']",
+    # Perfil
     "profile_name": "h1",
-    "bio": "div.bio, div.about, div.description",
-    "friends": "a[href*='/friends']",
-    "groups": "a[href*='/groups']"
+    "bio": "div[data-testid='profile_biography'], div.bio",
+    # Posts
+    "posts_container": "div[role='feed']",
+    "post": "div[role='article'][data-pagelet]",
+    "post_text": "div[data-ad-comet-preview='message']",
+    "reactions": "span[aria-label*='reacciones'], span[aria-label*='reactions']",
+    # Navegación
+    "friends_link": "a[href*='/friends']",
+    "groups_link": "a[href*='/groups']",
 }
